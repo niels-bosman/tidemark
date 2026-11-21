@@ -1,5 +1,6 @@
 import Cocoa
 import IOKit.ps
+import ServiceManagement
 
 // MARK: - Stats
 
@@ -131,6 +132,44 @@ final class Meter: NSObject, NSMenuDelegate {
         super.init()
         item.menu = NSMenu()
         item.menu?.delegate = self
+        item.isVisible = shown
+    }
+
+    var name: String { switch kind { case .cpu: "CPU"; case .ram: "RAM"; case .disk: "SSD"; case .battery: "Battery" } }
+    var shown: Bool { !UserDefaults.standard.bool(forKey: "hide.\(name)") }
+
+    @objc func toggleShown(_ sender: NSMenuItem) {
+        guard let m = sender.representedObject as? Meter else { return }
+        UserDefaults.standard.set(m.shown, forKey: "hide.\(m.name)")
+        m.item.isVisible = m.shown
+    }
+
+    @objc func toggleLogin() {
+        let s = SMAppService.mainApp
+        if s.status == .enabled { try? s.unregister(); return }
+        try? s.register()
+        if s.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+    }
+
+    func settingsMenu() -> NSMenuItem {
+        let sub = NSMenu()
+        sub.autoenablesItems = false
+        let visible = meters.filter { $0.item.isVisible }.count
+        for m in meters where m.kind != .battery || battery() != nil {
+            let i = NSMenuItem(title: "Show \(m.name)", action: #selector(toggleShown(_:)), keyEquivalent: "")
+            i.target = self; i.representedObject = m
+            i.state = m.shown ? .on : .off
+            i.isEnabled = !(m.shown && visible <= 1) // never hide the last meter, or there is no menu left to undo it
+            sub.addItem(i)
+        }
+        sub.addItem(.separator())
+        let login = NSMenuItem(title: "Launch at Login", action: #selector(toggleLogin), keyEquivalent: "")
+        login.target = self
+        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        sub.addItem(login)
+        let row = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
+        row.submenu = sub
+        return row
     }
 
     func show(_ label: String, _ pct: Double, _ color: NSColor) {
@@ -201,12 +240,14 @@ final class Meter: NSObject, NSMenuDelegate {
             }
         }
         menu.addItem(.separator())
+        menu.addItem(settingsMenu())
         menu.addItem(withTitle: "Quit Tidemark", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
 }
 
 // Status items appear right-to-left in creation order.
 let batMeter = Meter(.battery), diskMeter = Meter(.disk), ramMeter = Meter(.ram), cpuMeter = Meter(.cpu)
+let meters = [cpuMeter, ramMeter, diskMeter, batMeter]
 var cpuNow = 0.0
 
 func update() {
@@ -215,6 +256,7 @@ func update() {
     let m = mem(), pr = pressure()
     ramMeter.show("RAM", m.pct, pr == 1 ? .systemGreen : pr == 2 ? .systemOrange : .systemRed)
     if let b = battery() {
+        batMeter.item.isVisible = batMeter.shown
         batMeter.show(b.charging ? "CHG" : "BAT", b.pct, b.pct <= 10 ? .systemRed : b.pct <= 20 ? .systemOrange : .systemGreen)
     } else { batMeter.item.isVisible = false }
     let d = disk()
