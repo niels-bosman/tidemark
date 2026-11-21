@@ -53,6 +53,7 @@ The CPU and RAM menus also list the top 8 apps. Hover one in a process list for 
 Sources/main.swift       the app
 Resources/Info.plist     bundle metadata (menu bar only, no Dock icon)
 Resources/AppIcon.icns   app icon
+docs/                    README screenshots
 scripts/make-icon.swift  regenerates the icon: swift scripts/make-icon.swift
 build.sh                 builds build/Tidemark.app (--install to put it in /Applications)
 ```
