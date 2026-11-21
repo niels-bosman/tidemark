@@ -15,7 +15,8 @@ cd tidemark
 
 This builds the app, copies it to `/Applications` and opens it. The meters appear in your menu bar; there is no Dock icon.
 
-- **Start at login:** System Settings → General → Login Items → add Tidemark.
+- **Start at login:** open any meter's menu → Settings → Launch at Login.
+- **Hide a meter:** Settings → untick it. The last visible meter can't be hidden.
 - **Quit:** open any meter's menu and choose Quit Tidemark.
 - **Uninstall:** quit it, then delete `/Applications/Tidemark.app`.
 
