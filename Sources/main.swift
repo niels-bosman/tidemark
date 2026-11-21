@@ -57,6 +57,44 @@ func disk() -> (used: Double, free: Double, total: Double) {
     return (total - free, free, total)
 }
 
+// Cumulative bytes in/out over Wi-Fi and Ethernet. Only "en*" interfaces, so a VPN tunnel isn't counted twice.
+// The kernel counters are 32-bit and wrap; modular subtraction between samples handles that.
+func netBytes() -> (down: UInt32, up: UInt32) {
+    var list: UnsafeMutablePointer<ifaddrs>?
+    guard getifaddrs(&list) == 0 else { return (0, 0) }
+    defer { freeifaddrs(list) }
+    var down: UInt32 = 0, up: UInt32 = 0
+    var cur = list
+    while let ifa = cur?.pointee {
+        if let addr = ifa.ifa_addr, addr.pointee.sa_family == UInt8(AF_LINK), ifa.ifa_flags & UInt32(IFF_UP) != 0,
+           String(cString: ifa.ifa_name).hasPrefix("en"), let data = ifa.ifa_data {
+            let d = data.assumingMemoryBound(to: if_data.self).pointee
+            down &+= d.ifi_ibytes; up &+= d.ifi_obytes
+        }
+        cur = ifa.ifa_next
+    }
+    return (down, up)
+}
+
+var prevNet: (down: UInt32, up: UInt32)?
+var prevNetTime = Date()
+var netRate = (down: 0.0, up: 0.0) // bytes per second
+
+func sampleNet() {
+    let n = netBytes(), now = Date()
+    if let p = prevNet {
+        let dt = max(now.timeIntervalSince(prevNetTime), 0.1)
+        netRate = (Double(n.down &- p.down) / dt, Double(n.up &- p.up) / dt)
+    }
+    prevNet = n; prevNetTime = now
+}
+
+func speed(_ bytesPerSec: Double, short: Bool = false) -> String {
+    let k = bytesPerSec / 1024
+    if short { return k < 999.5 ? String(format: "%.0fK", k) : String(format: "%.1fM", k / 1024) }
+    return k < 999.5 ? String(format: "%.0f KB/s", k) : String(format: "%.1f MB/s", k / 1024)
+}
+
 func level(_ pct: Double, warn: Double, bad: Double) -> NSColor {
     pct < warn ? .systemGreen : pct < bad ? .systemOrange : .systemRed
 }
@@ -119,9 +157,23 @@ func render(_ label: String, _ pct: Double, _ color: NSColor) -> NSImage {
     }
 }
 
+func renderNet(down: Double, up: Double) -> NSImage {
+    let w: CGFloat = 30
+    return NSImage(size: NSSize(width: w, height: 22), flipped: false) { _ in
+        let arrow: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 7, weight: .bold), .foregroundColor: NSColor.secondaryLabelColor]
+        let num: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .medium), .foregroundColor: NSColor.labelColor]
+        for (arrowText, bytes, y) in [("↓", down, 11.0), ("↑", up, 1.0)] {
+            arrowText.draw(at: NSPoint(x: 0, y: y + 0.5), withAttributes: arrow)
+            let s = speed(bytes, short: true)
+            s.draw(at: NSPoint(x: w - s.size(withAttributes: num).width, y: y), withAttributes: num) // right-aligned
+        }
+        return true
+    }
+}
+
 // MARK: - Menus
 
-enum Kind { case cpu, ram, disk, battery }
+enum Kind { case cpu, ram, disk, battery, network }
 
 final class Meter: NSObject, NSMenuDelegate {
     let kind: Kind
@@ -135,7 +187,7 @@ final class Meter: NSObject, NSMenuDelegate {
         item.isVisible = shown
     }
 
-    var name: String { switch kind { case .cpu: "CPU"; case .ram: "RAM"; case .disk: "SSD"; case .battery: "Battery" } }
+    var name: String { switch kind { case .cpu: "CPU"; case .ram: "RAM"; case .disk: "SSD"; case .battery: "Battery"; case .network: "Network" } }
     var shown: Bool { !UserDefaults.standard.bool(forKey: "hide.\(name)") }
 
     @objc func toggleShown(_ sender: NSMenuItem) {
@@ -174,6 +226,10 @@ final class Meter: NSObject, NSMenuDelegate {
 
     func show(_ label: String, _ pct: Double, _ color: NSColor) {
         item.button?.image = render(label, pct, color)
+    }
+
+    func showNet(down: Double, up: Double) {
+        item.button?.image = renderNet(down: down, up: up)
     }
 
     @objc func noop() {}
@@ -218,6 +274,10 @@ final class Meter: NSObject, NSMenuDelegate {
             else if b.onAC { text(menu, "🔌 On power, not charging") }
             else { text(menu, "🔋 About \(hm(b.minutes)) left at current use") }
             text(menu, String(format: "%@ %.1f W", b.onAC ? "Charging at" : "Drawing", b.watts))
+        case .network:
+            text(menu, "Network (Wi-Fi and Ethernet)", bold: true)
+            text(menu, "↓ Download  \(speed(netRate.down))")
+            text(menu, "↑ Upload      \(speed(netRate.up))")
         case .disk:
             let d = disk()
             text(menu, String(format: "Disk: %.0f of %.0f GB used", d.used, d.total), bold: true)
@@ -246,12 +306,14 @@ final class Meter: NSObject, NSMenuDelegate {
 }
 
 // Status items appear right-to-left in creation order.
-let batMeter = Meter(.battery), diskMeter = Meter(.disk), ramMeter = Meter(.ram), cpuMeter = Meter(.cpu)
-let meters = [cpuMeter, ramMeter, diskMeter, batMeter]
+let batMeter = Meter(.battery), diskMeter = Meter(.disk), ramMeter = Meter(.ram), cpuMeter = Meter(.cpu), netMeter = Meter(.network)
+let meters = [cpuMeter, ramMeter, diskMeter, batMeter, netMeter]
 var cpuNow = 0.0
 
 func update() {
     cpuNow = cpu()
+    sampleNet()
+    netMeter.showNet(down: netRate.down, up: netRate.up)
     cpuMeter.show("CPU", cpuNow, level(cpuNow, warn: 60, bad: 85))
     let m = mem(), pr = pressure()
     ramMeter.show("RAM", m.pct, pr == 1 ? .systemGreen : pr == 2 ? .systemOrange : .systemRed)
