@@ -1,8 +1,15 @@
 <p align="center"><img src="Resources/icon.png" width="128" alt="Tidemark icon"></p>
 <h1 align="center">Tidemark</h1>
-<p align="center">CPU, RAM, disk, battery and network meters for your Mac menu bar.<br>One Swift file, no dependencies, about 1% CPU.</p>
+<p align="center"><b>Your Mac's vitals, always in the menu bar.</b><br>Free and open source.</p>
 
 <p align="center"><img src="docs/meters.png" width="262" alt="Tidemark meters in the menu bar: network, CPU, SSD, RAM, battery"></p>
+
+Tidemark shows CPU, RAM, disk, battery and network as small live meters in your menu bar. It's a free, open-source alternative to paid menu bar monitor apps: no subscription, no account, no tracking.
+
+- **Tells you when RAM is actually a problem.** The RAM bar follows macOS memory pressure, not "% used", so a Mac that is just using spare memory as a file cache stays green.
+- **Light.** One Swift file, no dependencies, about 1% CPU.
+- **Act on what you see.** Click CPU or RAM to see the heaviest apps, and quit or force quit them from the menu.
+- **Yours to change.** Hide the meters you don't need, start it at login, or read the whole source in a few minutes.
 
 ## Install
 
