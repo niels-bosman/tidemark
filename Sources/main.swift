@@ -143,11 +143,17 @@ final class Meter: NSObject, NSMenuDelegate {
         Darwin.kill(Int32(sender.tag), sender.representedObject as? Int32 ?? SIGTERM)
     }
 
-    func text(_ menu: NSMenu, _ s: String, bold: Bool = false) {
+    func text(_ menu: NSMenu, _ s: String, bold: Bool = false, mono: Bool = false) {
         let i = NSMenuItem(title: s, action: #selector(noop), keyEquivalent: "")
         i.target = self
         if bold { i.attributedTitle = NSAttributedString(string: s, attributes: [.font: NSFont.boldSystemFont(ofSize: 13)]) }
+        if mono { i.attributedTitle = NSAttributedString(string: s, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]) }
         menu.addItem(i)
+    }
+
+    // Monospaced so the numbers line up.
+    func row(_ menu: NSMenu, _ label: String, _ gb: Double, _ note: String = "") {
+        text(menu, label.padding(toLength: 15, withPad: " ", startingAt: 0) + String(format: "%5.1f GB", gb) + note, mono: true)
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -158,12 +164,12 @@ final class Meter: NSObject, NSMenuDelegate {
             text(menu, String(format: "Memory: %.1f of %.0f GB in use", m.used, m.total), bold: true)
             text(menu, pr == 1 ? "✅ Healthy: macOS is just using spare RAM" : pr == 2 ? "⚠️ Getting tight: consider closing apps" : "🔴 Under pressure: close some apps")
             menu.addItem(.separator())
-            text(menu, String(format: "Apps            %5.1f GB", m.app))
-            text(menu, String(format: "Wired (system)   %5.1f GB", m.wired))
-            text(menu, String(format: "Compressed       %5.1f GB", m.compressed))
+            row(menu, "Apps", m.app)
+            row(menu, "Wired (system)", m.wired)
+            row(menu, "Compressed", m.compressed)
             menu.addItem(.separator())
-            text(menu, String(format: "Cached files     %5.1f GB  (freed on demand)", m.cached))
-            text(menu, String(format: "Free             %5.1f GB", m.free))
+            row(menu, "Cached files", m.cached, "  (freed on demand)")
+            row(menu, "Free", m.free)
         case .cpu:
             text(menu, String(format: "CPU: %.0f%% busy", cpuNow), bold: true)
         case .battery:
