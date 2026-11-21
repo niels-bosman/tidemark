@@ -1,6 +1,6 @@
 cask "tidemark" do
-  version "0.0.0"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  version "1.0.0"
+  sha256 "e4fcca86ef8c81376745b5308eee5d0556d6e0ee3de3c06411cf457c3d01db74"
 
   url "https://github.com/niels-bosman/tidemark/releases/download/v#{version}/Tidemark.zip"
   name "Tidemark"
