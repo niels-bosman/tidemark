@@ -1,8 +1,8 @@
 <p align="center"><img src="Resources/icon.png" width="128" alt="Tidemark icon"></p>
 <h1 align="center">Tidemark</h1>
-<p align="center">CPU, RAM, disk and battery meters for your Mac menu bar.<br>One Swift file, no dependencies, about 1% CPU.</p>
+<p align="center">CPU, RAM, disk, battery and network meters for your Mac menu bar.<br>One Swift file, no dependencies, about 1% CPU.</p>
 
-<p align="center"><img src="docs/meters.png" width="216" alt="Tidemark meters in the menu bar: CPU, SSD, RAM, battery"></p>
+<p align="center"><img src="docs/meters.png" width="262" alt="Tidemark meters in the menu bar: network, CPU, SSD, RAM, battery"></p>
 
 ## Install
 
@@ -31,6 +31,7 @@ Each meter is a percentage next to a bar that fills up and changes colour. Click
 | **CPU** | green, orange above 60%, red above 85% | Top 8 apps by CPU |
 | **RAM** | macOS memory pressure, not % used | Memory breakdown and top 8 apps by memory |
 | **SSD** | orange above 80%, red above 92% | Used and available space |
+| **↓ ↑** | no bar, just download and upload speed | Speed in KB/s or MB/s over Wi-Fi and Ethernet |
 | **BAT** | orange at 20% or below, red at 10% or below | Time left, or time to full, and power draw in watts |
 
 <p>
@@ -46,6 +47,7 @@ The CPU and RAM menus also list the top 8 apps. Hover one in a process list for 
 - **RAM:** app + wired + compressed memory, as in Activity Monitor. A high number is normal because macOS caches files in spare RAM. The bar colour follows `kern.memorystatus_vm_pressure_level`, which is the real sign of trouble.
 - **Disk:** the `/` volume, counting space macOS can reclaim as free.
 - **Battery:** IOKit power sources. The time estimate comes from macOS and reflects current draw; watts come from the `AppleSmartBattery` gauge.
+- **Network:** bytes in and out of the `en*` interfaces (Wi-Fi and Ethernet) between two samples. VPN tunnels are skipped so traffic is not counted twice.
 - Stats refresh every 3 seconds. Process lists use `ps` and only run while a menu is open.
 
 ## Project layout
