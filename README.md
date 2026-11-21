@@ -12,6 +12,7 @@ Needs macOS 13 or later.
 
 ```sh
 brew tap niels-bosman/tidemark https://github.com/niels-bosman/tidemark
+brew trust niels-bosman/tidemark   # Homebrew 7 and later; skip on older versions
 brew install --cask tidemark
 ```
 
