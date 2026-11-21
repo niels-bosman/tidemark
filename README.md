@@ -2,6 +2,8 @@
 <h1 align="center">Tidemark</h1>
 <p align="center">CPU, RAM, disk and battery meters for your Mac menu bar.<br>One Swift file, no dependencies, about 1% CPU.</p>
 
+<p align="center"><img src="docs/meters.png" width="216" alt="Tidemark meters in the menu bar: CPU, SSD, RAM, battery"></p>
+
 ## Install
 
 ```sh
@@ -30,7 +32,12 @@ Each meter is a percentage next to a bar that fills up and changes colour. Click
 | **SSD** | orange above 80%, red above 92% | Used and available space |
 | **BAT** | orange at 20% or below, red at 10% or below | Time left, or time to full, and power draw in watts |
 
-Hover an app in a process list for **Quit** or **Force Quit**. Force Quit only works on your own processes.
+<p>
+  <img src="docs/ram.png" width="393" alt="RAM menu with memory breakdown">
+  <img src="docs/battery.png" width="298" alt="Battery menu with time left and power draw">
+</p>
+
+The CPU and RAM menus also list the top 8 apps. Hover one in a process list for **Quit** or **Force Quit**. Force Quit only works on your own processes.
 
 ## How it works
 
