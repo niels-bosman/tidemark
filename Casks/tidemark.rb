@@ -7,13 +7,13 @@ cask "tidemark" do
   desc "CPU, RAM, disk, battery and network meters for the menu bar"
   homepage "https://github.com/niels-bosman/tidemark"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "Tidemark.app"
 
   # The app is not notarized; clearing quarantine lets it open without the Gatekeeper prompt.
-  postflight do
-    system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Tidemark.app"]
+  postflight_steps do
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Tidemark.app"]
   end
 
   zap trash: "~/Library/Preferences/local.tidemark.plist"
