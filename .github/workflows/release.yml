@@ -1,0 +1,39 @@
+name: release
+
+# Push a tag like v1.0.0 to build the app, publish it as a GitHub release
+# and point the Homebrew cask at it.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Package
+        run: ditto -c -k --keepParent build/Tidemark.app Tidemark.zip
+
+      - name: Publish release
+        run: gh release create "$GITHUB_REF_NAME" Tidemark.zip --generate-notes
+
+      - name: Update cask
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA=$(shasum -a 256 Tidemark.zip | cut -d' ' -f1)
+          git fetch origin main
+          git checkout main
+          sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA\"/" Casks/tidemark.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: update cask to $VERSION"
+          git push origin main
