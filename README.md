@@ -6,6 +6,19 @@
 
 ## Install
 
+Needs macOS 13 or later.
+
+**Homebrew** (recommended):
+
+```sh
+brew tap niels-bosman/tidemark https://github.com/niels-bosman/tidemark
+brew install --cask tidemark
+```
+
+**Download:** get `Tidemark.zip` from the [latest release](https://github.com/niels-bosman/tidemark/releases/latest), unzip it and move Tidemark to Applications. The app is not notarized, so the first launch is blocked: open System Settings → Privacy & Security and click **Open Anyway**.
+
+**Build from source** (needs the Xcode Command Line Tools):
+
 ```sh
 xcode-select --install   # once; skip if you already have developer tools
 git clone https://github.com/niels-bosman/tidemark.git
@@ -13,14 +26,12 @@ cd tidemark
 ./build.sh --install
 ```
 
-This builds the app, copies it to `/Applications` and opens it. The meters appear in your menu bar; there is no Dock icon.
+The meters appear in your menu bar; there is no Dock icon.
 
 - **Start at login:** open any meter's menu → Settings → Launch at Login.
 - **Hide a meter:** Settings → untick it. The last visible meter can't be hidden.
 - **Quit:** open any meter's menu and choose Quit Tidemark.
-- **Uninstall:** quit it, then delete `/Applications/Tidemark.app`.
-
-Developed and tested on one Mac running a recent macOS. Older versions are untested.
+- **Uninstall:** quit it, then `brew uninstall --cask tidemark`, or delete `/Applications/Tidemark.app`.
 
 ## What you get
 
@@ -58,7 +69,9 @@ Resources/Info.plist     bundle metadata (menu bar only, no Dock icon)
 Resources/AppIcon.icns   app icon
 docs/                    README screenshots
 scripts/make-icon.swift  regenerates the icon: swift scripts/make-icon.swift
-build.sh                 builds build/Tidemark.app (--install to put it in /Applications)
+build.sh                 builds a universal build/Tidemark.app (--install to put it in /Applications)
+Casks/tidemark.rb        Homebrew cask, updated automatically on each release
+.github/workflows/       release workflow: tag vX.Y.Z to publish
 ```
 
 ## Limitations
