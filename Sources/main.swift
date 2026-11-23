@@ -146,9 +146,14 @@ func topProcesses(byMemory: Bool) -> [(pid: Int32, name: String, cpu: String, rs
 func render(_ label: String, _ pct: Double, _ color: NSColor) -> NSImage {
     NSImage(size: NSSize(width: 38, height: 22), flipped: false) { _ in
         let small: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 7.5, weight: .semibold), .foregroundColor: NSColor.secondaryLabelColor]
-        let big: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium), .foregroundColor: NSColor.labelColor]
+        let text = String(format: "%.0f%%", pct)
+        var big: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium), .foregroundColor: NSColor.labelColor]
+        let width = text.size(withAttributes: big).width
+        if width > 27 { // "100%" would run into the bar at x = 30, so shrink it to fit
+            big[.font] = NSFont.monospacedDigitSystemFont(ofSize: 10.5 * 27 / width, weight: .medium)
+        }
         label.draw(at: NSPoint(x: 0, y: 11), withAttributes: small)
-        String(format: "%.0f%%", pct).draw(at: NSPoint(x: 0, y: 0), withAttributes: big)
+        text.draw(at: NSPoint(x: 0, y: 0), withAttributes: big)
         NSColor.labelColor.withAlphaComponent(0.2).setFill()
         NSBezierPath(roundedRect: NSRect(x: 30, y: 3, width: 6, height: 16), xRadius: 1.5, yRadius: 1.5).fill()
         color.setFill()
